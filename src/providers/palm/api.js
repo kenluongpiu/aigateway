@@ -1,0 +1,24 @@
+export const PalmApiConfig = {
+    getBaseURL: () => 'https://generativelanguage.googleapis.com/v1beta3',
+    headers: () => {
+        return { 'Content-Type': 'application/json' };
+    },
+    getEndpoint: ({ providerOptions, fn, gatewayRequestBodyJSON }) => {
+        const { apiKey } = providerOptions;
+        const { model } = gatewayRequestBodyJSON;
+        switch (fn) {
+            case 'complete': {
+                return `/models/${model}:generateText?key=${apiKey}`;
+            }
+            case 'chatComplete': {
+                return `/models/${model}:generateMessage?key=${apiKey}`;
+            }
+            case 'embed': {
+                return `/models/${model}:embedText?key=${apiKey}`;
+            }
+            default:
+                return '';
+        }
+    },
+};
+export default PalmApiConfig;

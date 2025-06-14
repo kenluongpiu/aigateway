@@ -1,0 +1,95 @@
+import { AI21 } from '../../globals';
+import { generateInvalidProviderResponseError } from '../utils';
+import { AI21ErrorResponseTransform } from './chatComplete';
+export const AI21CompleteConfig = {
+    prompt: {
+        param: 'prompt',
+        required: true,
+    },
+    n: {
+        param: 'numResults',
+        default: 1,
+    },
+    max_tokens: {
+        param: 'maxTokens',
+        default: 16,
+    },
+    minTokens: {
+        param: 'minTokens',
+        default: 0,
+    },
+    temperature: {
+        param: 'temperature',
+        default: 0.7,
+        min: 0,
+        max: 1,
+    },
+    top_p: {
+        param: 'topP',
+        default: 1,
+    },
+    top_k: {
+        param: 'topKReturn',
+        default: 0,
+    },
+    stop: {
+        param: 'stopSequences',
+    },
+    presence_penalty: {
+        param: 'presencePenalty',
+        transform: (params) => {
+            return {
+                scale: params.presence_penalty,
+            };
+        },
+    },
+    frequency_penalty: {
+        param: 'frequencyPenalty',
+        transform: (params) => {
+            return {
+                scale: params.frequency_penalty,
+            };
+        },
+    },
+    countPenalty: {
+        param: 'countPenalty',
+    },
+    frequencyPenalty: {
+        param: 'frequencyPenalty',
+    },
+    presencePenalty: {
+        param: 'presencePenalty',
+    },
+};
+export const AI21CompleteResponseTransform = (response, responseStatus) => {
+    if (responseStatus !== 200) {
+        const errorResposne = AI21ErrorResponseTransform(response);
+        if (errorResposne)
+            return errorResposne;
+    }
+    if ('completions' in response) {
+        const inputTokens = response.prompt.tokens?.length || 0;
+        const outputTokens = response.completions
+            .map((c) => c.data?.tokens?.length || 0)
+            .reduce((partialSum, a) => partialSum + a, 0);
+        return {
+            id: response.id,
+            object: 'text_completion',
+            created: Math.floor(Date.now() / 1000),
+            model: '',
+            provider: AI21,
+            choices: response.completions.map((completion, index) => ({
+                text: completion.data.text,
+                index: index,
+                logprobs: null,
+                finish_reason: completion.finishReason?.reason,
+            })),
+            usage: {
+                prompt_tokens: inputTokens,
+                completion_tokens: outputTokens,
+                total_tokens: inputTokens + outputTokens,
+            },
+        };
+    }
+    return generateInvalidProviderResponseError(response, AI21);
+};

@@ -9,7 +9,16 @@ import { prettyJSON } from 'hono/pretty-json';
 import { HTTPException } from 'hono/http-exception';
 import { compress } from 'hono/compress';
 import { getRuntimeKey } from 'hono/adapter';
+import { swaggerUI } from '@hono/swagger-ui';
 // import { env } from 'hono/adapter' // Have to set this up for multi-environment deployment
+
+// OpenAPI specification
+import { openApiSpec } from './openapi';
+import { publicIndexHtml } from './static';
+
+// Authentication routes
+import authRoutes from './routes/auth';
+import testRoutes from './routes/test';
 
 // Middlewares
 import { requestValidator } from './middlewares/requestValidator';
@@ -82,6 +91,22 @@ if (runtime === 'node') {
  */
 app.get('/', (c) => c.text('AI Gateway says hey!'));
 
+/**
+ * Serve static files from public directory
+ */
+app.get('/public/*', async (c) => {
+  const path = c.req.path.replace('/public', '');
+  try {
+    // In Cloudflare Workers, we'll serve the built-in HTML
+    if (path === '/' || path === '') {
+      return c.html(publicIndexHtml);
+    }
+    return c.notFound();
+  } catch (error) {
+    return c.notFound();
+  }
+});
+
 // Use prettyJSON middleware for all routes
 app.use('*', prettyJSON());
 
@@ -96,6 +121,17 @@ app.use('*', hooks);
 if (conf.cache === true) {
   app.use('*', memoryCache());
 }
+
+/**
+ * Authentication Routes
+ * Handles user registration, login, and authentication
+ */
+app.route('/auth', authRoutes);
+
+/**
+ * Test Routes for debugging
+ */
+app.route('/test', testRoutes);
 
 /**
  * Default route when no other route matches.
@@ -266,6 +302,10 @@ app.post('/v1/*', requestValidator, proxyHandler);
 app.get('/v1/:path{(?!realtime).*}', requestValidator, proxyHandler);
 
 app.delete('/v1/*', requestValidator, proxyHandler);
+
+// Swagger UI routes
+app.get('/docs', swaggerUI({ url: '/docs/openapi.json' }));
+app.get('/docs/openapi.json', (c) => c.json(openApiSpec));
 
 // Export the app
 export default app;

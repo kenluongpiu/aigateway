@@ -1,0 +1,45 @@
+import { getText } from '../utils';
+import { postPillar } from './globals';
+export const handler = async (context, parameters, eventType) => {
+    let error = null;
+    let verdict = false;
+    let data = null;
+    if (parameters.scanners.length === 0) {
+        return { error: { message: 'No scanners specified' }, verdict: true, data };
+    }
+    let scannerObject = {};
+    parameters.scanners.forEach((scanner) => {
+        scannerObject[scanner] = true;
+    });
+    try {
+        let scanResponseObject = {
+            message: getText(context, eventType),
+            scanners: scannerObject,
+        };
+        const result = await postPillar('scanResponse', parameters.credentials, scanResponseObject, parameters.timeout);
+        // if any of the scanners found something, we will return a verdict of false
+        // ignore null values - they're counted as true as well
+        // attach the result object as data
+        for (const key in result) {
+            if (result[key] !== null &&
+                result[key] !== false &&
+                [
+                    'pii',
+                    'prompt_injection',
+                    'secrets',
+                    'toxic_language',
+                    'invisible_characters',
+                ].includes(key)) {
+                verdict = false;
+                break;
+            }
+            verdict = true;
+        }
+        data = result;
+    }
+    catch (e) {
+        delete e.stack;
+        error = e;
+    }
+    return { error, verdict, data };
+};

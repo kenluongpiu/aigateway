@@ -82,10 +82,9 @@ export const retryRequest = async (
   let retrySkipped = false;
 
   let remainingRetryTimeout = MAX_RETRY_LIMIT_MS;
-
   try {
     await retry(
-      async (bail: any, attempt: number, rateLimiter: any) => {
+      async (bail: any, attempt: number) => {
         try {
           let response: Response;
           if (timeout) {
@@ -123,23 +122,16 @@ export const retryRequest = async (
                 retryAfter = Number.parseInt(retryAfterValue.trim()) * 1000;
               } else {
                 retryAfter = Number.parseInt(retryAfterValue.trim());
-              }
-
-              if (retryAfter && !Number.isNaN(retryAfter)) {
+              }              if (retryAfter && !Number.isNaN(retryAfter)) {
                 // break the loop if the retryAfter is greater than the max retry limit
                 if (
                   retryAfter >= MAX_RETRY_LIMIT_MS ||
                   retryAfter > remainingRetryTimeout
                 ) {
                   retrySkipped = true;
-                  rateLimiter._timeouts = [];
                   throw errorObj;
                 }
                 remainingRetryTimeout -= retryAfter;
-                // will reset the current backoff timeout(s) to `0`.
-                rateLimiter._timeouts = Array.from({
-                  length: retryCount - attempt + 1,
-                }).map(() => 0);
 
                 throw await new Promise((resolve) => {
                   setTimeout(() => {

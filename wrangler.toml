@@ -6,6 +6,9 @@ compatibility_flags = [ "nodejs_compat" ]
 [vars]
 ENVIRONMENT = 'dev'
 CUSTOM_HEADERS_TO_IGNORE = []
+DATABASE_URL = 'postgresql://postgres:fti123@34.124.178.40:5432/onporta'
+JWT_SECRET = 'fti123'
+JWT_EXPIRES_IN = '14d'
 
 #
 #Configuration for DEVELOPMENT environment
@@ -16,6 +19,9 @@ name = "rubeus-dev"
 [env.staging.vars]
 ENVIRONMENT = 'staging'
 CUSTOM_HEADERS_TO_IGNORE = []
+DATABASE_URL = 'postgresql://postgres:fti123@34.124.178.40:5432/onporta'
+JWT_SECRET = 'fti123'
+JWT_EXPIRES_IN = '14d'
 
 
 #
@@ -28,3 +34,6 @@ logpush=true
 [env.production.vars]
 ENVIRONMENT = 'production'
 CUSTOM_HEADERS_TO_IGNORE = []
+DATABASE_URL = 'postgresql://postgres:fti123@34.124.178.40:5432/onporta'
+JWT_SECRET = 'fti123-production'
+JWT_EXPIRES_IN = '14d'

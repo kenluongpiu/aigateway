@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+// Load environment variables from .env file
+import { config } from 'dotenv';
+config();
+
 import { serve } from '@hono/node-server';
 
 import app from './index';
